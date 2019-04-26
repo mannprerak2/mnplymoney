@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,6 +33,10 @@ import com.google.android.gms.nearby.connection.Strategy;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String SERVICE_ID = "com.pkmnapps.mnplymoney_service_id";
@@ -42,9 +47,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int iLoaderScreen = 4;
 
     private String nickname;
-    private TextView idTextView, discoverStatus, advertiseStatus;
+    private TextView idTextView, discoverStatus, advertiseStatus, gameMoneyTextView, gamePlayersTextView;
+    private Spinner paySpinner;
 
     private View startScreen, hostScreen, joinScreen, gameScreen, loaderScreen;
+
+    private List<String> players = new ArrayList<>();
+    private int money = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +74,13 @@ public class MainActivity extends AppCompatActivity {
         loaderScreen = findViewById(R.id.loaderLayout);
 
 
+        gameMoneyTextView = findViewById(R.id.gameMoney);
+        gamePlayersTextView = findViewById(R.id.gamePlayers);
+
+        paySpinner = findViewById(R.id.paySpinner);
+
+
+
         //check for permissions
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -78,12 +94,44 @@ public class MainActivity extends AppCompatActivity {
     private final PayloadCallback payloadCallback = new PayloadCallback() {
         @Override
         public void onPayloadReceived(@NonNull String s, @NonNull Payload payload) {
+            // format of payload
+            // 1. convert byte to string first.
+            // 2. strings are comma separated, split to an array
+            // 3.   index 0: type
 
+            final String[] result = new String(payload.asBytes()).split(",");
+
+            switch (result[0]) {
+                case "start":
+                    //[type, starting money, player names]
+                    money = Integer.parseInt(result[1]);
+                    players.clear();
+                    players.addAll(Arrays.asList(result).subList(2, result.length));
+                    StringBuilder builder = new StringBuilder();
+                    for (int i = 2; i < players.size(); i++) {
+                        builder.append(players.get(i));
+                        builder.append("\n");
+                    }
+                    builder.deleteCharAt(builder.length() - 1);
+                    gamePlayersTextView.setText(builder.toString());
+                    gameMoneyTextView.setText(money);
+
+                    showScreen(iGameScreen);
+                    break;
+                case "get":
+
+                    break;
+                case "pay":
+
+                    break;
+                default:
+                    Toast.makeText(MainActivity.this, "Unknown payload delivered", Toast.LENGTH_SHORT).show();
+            }
         }
 
         @Override
         public void onPayloadTransferUpdate(@NonNull String s, @NonNull PayloadTransferUpdate payloadTransferUpdate) {
-
+            // no need to implement, only required for file or stream.
         }
     };
 
@@ -94,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
             // connection was requested by discoverer, and needs to be accepted by both now
             Nearby.getConnectionsClient(MainActivity.this)
                     .acceptConnection(s, payloadCallback);
+
             stopDiscovery(); //
         }
 
@@ -102,8 +151,10 @@ public class MainActivity extends AppCompatActivity {
             switch (result.getStatus().getStatusCode()) {
                 case ConnectionsStatusCodes.STATUS_OK:
                     // We're connected! Can now start sending and receiving data.
+                    // add to players
                     Toast.makeText(getApplicationContext(), "Connected to: " + s, Toast.LENGTH_SHORT).show();
                     discoverStatus.setText("Connected to:" + s + "'s Game");
+                    players.add(s);
                     break;
                 case ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED:
                     // The connection was rejected by one or both sides.
@@ -141,6 +192,8 @@ public class MainActivity extends AppCompatActivity {
                     public void onSuccess(Void aVoid) {
                         showScreen(iHostScreen);
                         Toast.makeText(getApplicationContext(), "Advertising started", Toast.LENGTH_SHORT).show();
+                        players.clear();
+                        players.add(getUserNickname());
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -223,10 +276,33 @@ public class MainActivity extends AppCompatActivity {
 
     public void startGame(View view) {
         Nearby.getConnectionsClient(this).stopAdvertising();
-        //TODO-send a payload to start game
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("start");
+        builder.append(",");
+        builder.append("1500"); //initial money
+        builder.append(",");
+        for (String player : players) {
+            builder.append(player);
+            builder.append(",");
+        }
+        builder.deleteCharAt(builder.length() - 1);
+
+        for (String player : players) {
+            Nearby.getConnectionsClient(this).sendPayload(player, Payload.fromBytes(builder.toString().getBytes()));
+        }
 
         showScreen(iLoaderScreen);
     }
+
+    public void getButtonClick(View view) {
+
+    }
+
+    public void payButtonClick(View view) {
+
+    }
+
 
     private String getUserNickname() {
         if (nickname == null)
@@ -273,6 +349,9 @@ public class MainActivity extends AppCompatActivity {
         if (screenNumber == iStartScreen) {
             //change all textviews to initial state
             discoverStatus.setText("...");
+            advertiseStatus.setText("...");
+            gamePlayersTextView.setText("...");
+            gameMoneyTextView.setText("...");
         }
     }
 

@@ -10,7 +10,7 @@
         android:id="@+id/startLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/idTextView"
@@ -155,7 +155,95 @@
         android:id="@+id/gameLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone">
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/gamePlayers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:text="..."
+            app:layout_constraintBottom_toTopOf="@id/gameMoney"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/gameMoney"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="..."
+            android:textSize="40sp"
+            app:layout_constraintBottom_toTopOf="@+id/getButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/gamePlayers" />
+
+        <Button
+            android:id="@+id/getButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:onClick="getButtonClick"
+            android:text="Get"
+            app:layout_constraintBottom_toTopOf="@+id/payButton"
+            app:layout_constraintEnd_toStartOf="@+id/getTextView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/gameMoney" />
+
+        <EditText
+            android:id="@+id/getTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="32dp"
+            android:inputType="number"
+            android:text="200"
+            app:layout_constraintBottom_toBottomOf="@+id/getButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/getButton"
+            app:layout_constraintTop_toTopOf="@+id/getButton" />
+
+        <Button
+            android:id="@+id/payButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:onClick="payButtonClick"
+            android:text="PAY"
+            app:layout_constraintBottom_toTopOf="@id/paySpinner"
+            app:layout_constraintEnd_toEndOf="@+id/getButton"
+            app:layout_constraintStart_toStartOf="@+id/getButton"
+            app:layout_constraintTop_toBottomOf="@+id/getButton" />
+
+        <EditText
+            android:id="@+id/payTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="0"
+            app:layout_constraintBottom_toBottomOf="@+id/payButton"
+            app:layout_constraintEnd_toEndOf="@+id/getTextView"
+            app:layout_constraintStart_toStartOf="@+id/getTextView"
+            app:layout_constraintTop_toTopOf="@+id/payButton" />
+
+        <Spinner
+            android:id="@+id/paySpinner"
+            android:layout_width="395dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/payButton"
+            app:layout_constraintTop_toBottomOf="@+id/payButton" />
+
 
     </android.support.constraint.ConstraintLayout>
 
@@ -166,9 +254,9 @@
         android:visibility="gone">
 
         <android.support.v4.widget.ContentLoadingProgressBar
+            style="?android:attr/progressBarStyleLarge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="?android:attr/progressBarStyleLarge"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
