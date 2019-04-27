@@ -10,7 +10,7 @@
         android:id="@+id/startLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone">
+        android:visibility="visible">
 
         <TextView
             android:id="@+id/idTextView"
@@ -155,7 +155,7 @@
         android:id="@+id/gameLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/gamePlayers"
@@ -193,12 +193,12 @@
             android:onClick="getButtonClick"
             android:text="Get"
             app:layout_constraintBottom_toTopOf="@+id/payButton"
-            app:layout_constraintEnd_toStartOf="@+id/getTextView"
+            app:layout_constraintEnd_toStartOf="@+id/getEditText"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/gameMoney" />
 
         <EditText
-            android:id="@+id/getTextView"
+            android:id="@+id/getEditText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="32dp"
@@ -222,14 +222,14 @@
             app:layout_constraintTop_toBottomOf="@+id/getButton" />
 
         <EditText
-            android:id="@+id/payTextView"
+            android:id="@+id/payEditText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="number"
             android:text="0"
             app:layout_constraintBottom_toBottomOf="@+id/payButton"
-            app:layout_constraintEnd_toEndOf="@+id/getTextView"
-            app:layout_constraintStart_toStartOf="@+id/getTextView"
+            app:layout_constraintEnd_toEndOf="@+id/getEditText"
+            app:layout_constraintStart_toStartOf="@+id/getEditText"
             app:layout_constraintTop_toTopOf="@+id/payButton" />
 
         <Spinner
@@ -241,7 +241,7 @@
             android:layout_marginBottom="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/payButton"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/payButton" />
 
 
