@@ -114,15 +114,16 @@ public class MainActivity extends AppCompatActivity {
 
             switch (result[0]) {
                 case "start":
-                    //[type, starting money, player names]
+                    //[type, starting money, player names..]
                     money = Integer.parseInt(result[1]);
+                    gameMoneyTextView.setText(String.valueOf(money));
+
                     players.clear();
                     players.addAll(Arrays.asList(result).subList(2, result.length));
 
                     hostname = players.get(0);
 
                     updatePlayerTextView();
-                    gameMoneyTextView.setText(money);
 
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(
                             MainActivity.this, android.R.layout.simple_spinner_item, players);
@@ -133,49 +134,44 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case "get":
                     //[type, receiver, amount]
-                    if (isHost) {
+                    if (isHost) { //forward this get request to anyone other than host or receiver itself
                         for (int i = 0; i < players.size(); i++) {
                             String player = players.get(i);
-                            if (!player.equals(hostname) || !player.equals(result[1])) {
+                            if (!player.equals(hostname) && !player.equals(result[1])) {
                                 //send to any one player for confirmation
                                 Nearby.getConnectionsClient(MainActivity.this).sendPayload(player, payload);
                                 break;
                             }
                         }
-                    }
-                    final StringBuilder sbuilder = new StringBuilder();
-                    sbuilder.append("get-success");
-                    sbuilder.append(",");
-                    sbuilder.append(getUserNickname());
-                    sbuilder.append(",");
-                    sbuilder.append(result[2]);
-                    sbuilder.append(",");
+                    } else {
+                        final StringBuilder sbuilder = new StringBuilder();
+                        sbuilder.append("get-success");
+                        sbuilder.append(",");
+                        sbuilder.append(getUserNickname());
+                        sbuilder.append(",");
+                        sbuilder.append(result[2]);
+                        sbuilder.append(",");
 
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setMessage(result[1] + "asks for " + result[2] + " from bank");
-                    builder.setPositiveButton("Give", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            sbuilder.append("y");
-                            if (isHost)
-                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(result[1], Payload.fromBytes(builder.toString().getBytes()));
-                            else
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        builder.setMessage(result[1] + "asks for " + result[2] + " from bank");
+                        builder.setPositiveButton("Give", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                sbuilder.append("y");
                                 Nearby.getConnectionsClient(MainActivity.this).sendPayload(hostname, Payload.fromBytes(builder.toString().getBytes()));
-                        }
-                    });
-                    builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            sbuilder.append("n");
-                            if (isHost)
-                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(result[1], Payload.fromBytes(builder.toString().getBytes()));
-                            else
+                            }
+                        });
+                        builder.setNegativeButton("Deny", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                sbuilder.append("n");
                                 Nearby.getConnectionsClient(MainActivity.this).sendPayload(hostname, Payload.fromBytes(builder.toString().getBytes()));
-                        }
-                    });
-                    builder.setCancelable(false);
-                    builder.create().show();
-                    break;
+                            }
+                        });
+                        builder.setCancelable(false);
+                        builder.create().show();
+                        break;
+                    }
                 case "get-success":
                     //[type, receiver, money, y/n]
                     if (result[1].equals(getUserNickname())) {
@@ -183,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
                         final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
                         if (result[3].equals("y")) {
                             money += Integer.parseInt(result[2]);
+                            gameMoneyTextView.setText(String.valueOf(money));
                             alertBuilder.setMessage("Received " + result[2]);
                         } else {
                             alertBuilder.setMessage("Denied " + result[2]);
@@ -197,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
                     //[type, sender, receiver, amount]
                     if (result[2].equals(getUserNickname())) {
                         money += Integer.parseInt(result[3]);
-                        gameMoneyTextView.setText(money);
+                        gameMoneyTextView.setText(String.valueOf(money));
                     } else if (isHost) {
                         //send payload to actual receiver.
                         Nearby.getConnectionsClient(MainActivity.this).sendPayload(result[2], payload);
@@ -277,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
                         players.clear();
                         players.add(getUserNickname());
                         isHost = true;
+                        hostname = getUserNickname();
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -288,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    // not related to stopping connection
     public void stopAdvertising(View view) {
         Nearby.getConnectionsClient(this).stopAdvertising();
         Toast.makeText(getApplicationContext(), "Advertising stopped", Toast.LENGTH_SHORT).show();
@@ -340,6 +339,7 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    // not related to stopping connection
     private void stopDiscovery() {
         Nearby.getConnectionsClient(this).stopDiscovery();
         Toast.makeText(getApplicationContext(), "Discovery stopped", Toast.LENGTH_SHORT).show();
@@ -358,6 +358,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startGame(View view) {
+        showScreen(iGameScreen);
+
         Nearby.getConnectionsClient(this).stopAdvertising();
 
         StringBuilder builder = new StringBuilder();
@@ -378,20 +380,19 @@ public class MainActivity extends AppCompatActivity {
 
         //[type, starting money, player names]
         money = Integer.parseInt(START_MONEY);
+        gameMoneyTextView.setText(String.valueOf(money));
 
         updatePlayerTextView();
-        gameMoneyTextView.setText(money);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 MainActivity.this, android.R.layout.simple_spinner_item, players);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         paySpinner.setAdapter(adapter);
 
-        showScreen(iGameScreen);
     }
 
     public void getButtonClick(final View view) {
-        if (b.isShown())
+        if (b!=null && b.isShown())
             return;
         final int amount = Integer.parseInt(getEditText.getText().toString());
         if (amount <= 0)
@@ -443,6 +444,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 money -= amount;
+                gameMoneyTextView.setText(String.valueOf(money));
 
                 StringBuilder builder = new StringBuilder();
                 builder.append("pay");
