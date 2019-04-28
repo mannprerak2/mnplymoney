@@ -122,10 +122,10 @@ public class MainActivity extends AppCompatActivity {
                     gameMoneyTextView.setText(String.valueOf(money));
 
                     playerMap.clear();
-                    for (int i = 2; i < result.length; i += 2) {
+                    playerMap.put(hostId, result[3]); //first one is hostID
+                    for (int i = 4; i < result.length; i += 2) {
                         playerMap.put(result[i], result[i + 1]);
                     }
-
 
                     updatePlayerTextView();
 
@@ -218,7 +218,6 @@ public class MainActivity extends AppCompatActivity {
             // connection was requested by discoverer, and needs to be accepted by both now
             Nearby.getConnectionsClient(MainActivity.this)
                     .acceptConnection(s, payloadCallback);
-            playerMap.put(s, connectionInfo.getEndpointName());
             stopDiscovery(); //
         }
 
@@ -230,20 +229,19 @@ public class MainActivity extends AppCompatActivity {
                     // add to players
                     Toast.makeText(getApplicationContext(), "Connected to: " + s, Toast.LENGTH_SHORT).show();
                     discoverStatus.setText("Connected");
-                    hostId = s;
+                    if (!isHost)
+                        hostId = s;
                     updateAdvertiseTextView();
                     break;
                 case ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED:
                     // The connection was rejected by one or both sides.
                     Toast.makeText(getApplicationContext(), "Connection rejected: " + s, Toast.LENGTH_SHORT).show();
                     discoverStatus.setText("Connection rejected: " + s);
-                    playerMap.remove(s);
                     break;
                 case ConnectionsStatusCodes.STATUS_ERROR:
                     // The connection broke before it was able to be accepted.
                     Toast.makeText(getApplicationContext(), "Connection broke: " + s, Toast.LENGTH_SHORT).show();
                     discoverStatus.setText("Connection broke: " + s);
-                    playerMap.remove(s);
                     break;
                 default:
                     // Unknown status code
@@ -429,20 +427,15 @@ public class MainActivity extends AppCompatActivity {
 
                 //send payload to host
                 if (isHost) {//send directly
-//                    for (String player : players) {
-//                        if (!player.equals(getUserNickname()))
-//                            Nearby.getConnectionsClient(MainActivity.this).sendPayload(player, Payload.fromBytes(builder.toString().getBytes()));
-//                    }
 
                     Iterator<Map.Entry<String, String>> iterator = playerMap.entrySet().iterator();
-
-                    for (Map.Entry<String, String> entry = iterator.next(); entry != null; entry = iterator.next()) {
+                    while (iterator.hasNext()) {
+                        Map.Entry<String, String> entry = iterator.next();
                         if (!entry.getValue().equals(getUserNickname())) {
                             Nearby.getConnectionsClient(MainActivity.this).sendPayload(entry.getKey(), Payload.fromBytes(builder.toString().getBytes()));
                             break;
                         }
                     }
-
                 } else {
                     Nearby.getConnectionsClient(MainActivity.this).sendPayload(hostId, Payload.fromBytes(builder.toString().getBytes()));
                 }
@@ -527,8 +520,10 @@ public class MainActivity extends AppCompatActivity {
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                if (!userInput.getText().toString().equals(""))
+                                if (!userInput.getText().toString().equals("")) {
                                     idTextView.setText(userInput.getText());
+                                    nickname = userInput.getText().toString();
+                                }
                             }
                         })
                 .create()
@@ -556,6 +551,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updatePlayerTextView() {
         StringBuilder builder = new StringBuilder();
+        builder.append("----Players----\n");
         for (String player : playerMap.values()) {
             builder.append(player);
             builder.append("\n");
