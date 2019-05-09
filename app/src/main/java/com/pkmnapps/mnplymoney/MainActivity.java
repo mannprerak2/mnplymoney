@@ -67,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
 
     private int money = 0;
 
+    private String tempPlayerName = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,8 +131,13 @@ public class MainActivity extends AppCompatActivity {
 
                     updatePlayerTextView();
 
+                    List<String> payPlayers = new ArrayList<>();
+                    for (String player : (playerMap.values().toArray(new String[0]))) {
+                        if (!player.equals(getUserNickname()))
+                            payPlayers.add(player);
+                    }
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                            MainActivity.this, android.R.layout.simple_spinner_item, playerMap.values().toArray(new String[0]));
+                            MainActivity.this, android.R.layout.simple_spinner_item, payPlayers);
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     paySpinner.setAdapter(adapter);
 
@@ -140,23 +147,23 @@ public class MainActivity extends AppCompatActivity {
                     //[type, receiver, amount]
 
                     final StringBuilder sbuilder = new StringBuilder();
-                    sbuilder.append("get-success");
+                    sbuilder.append("allowed");
                     sbuilder.append(",");
-                    sbuilder.append(getUserNickname());
+                    sbuilder.append(result[1]);
                     sbuilder.append(",");
                     sbuilder.append(result[2]);
                     sbuilder.append(",");
 
                     final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setMessage(result[1] + "asks for " + result[2] + " from bank");
+                    builder.setMessage(result[1] + " asks for " + result[2] + " from bank");
                     builder.setPositiveButton("Give", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             sbuilder.append("y");
                             if (isHost)
-                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(getKey(playerMap, result[1]), Payload.fromBytes(builder.toString().getBytes()));
+                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(getKey(playerMap, result[1]), Payload.fromBytes(sbuilder.toString().getBytes()));
                             else
-                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(hostId, Payload.fromBytes(builder.toString().getBytes()));
+                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(hostId, Payload.fromBytes(sbuilder.toString().getBytes()));
                         }
                     });
                     builder.setNegativeButton("Deny", new DialogInterface.OnClickListener() {
@@ -164,16 +171,16 @@ public class MainActivity extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             sbuilder.append("n");
                             if (isHost)
-                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(getKey(playerMap, result[1]), Payload.fromBytes(builder.toString().getBytes()));
+                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(getKey(playerMap, result[1]), Payload.fromBytes(sbuilder.toString().getBytes()));
                             else
-                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(hostId, Payload.fromBytes(builder.toString().getBytes()));
+                                Nearby.getConnectionsClient(MainActivity.this).sendPayload(hostId, Payload.fromBytes(sbuilder.toString().getBytes()));
                         }
                     });
                     builder.setCancelable(false);
                     builder.create().show();
                     break;
 
-                case "get-success":
+                case "allowed":
                     //[type, receiver, amount, y/n]
                     if (result[1].equals(getUserNickname())) {
                         b.dismiss();
@@ -189,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
                     } else if (isHost) { //forward to other players
                         Nearby.getConnectionsClient(MainActivity.this).sendPayload(getKey(playerMap, result[1]), payload);
                     }
+
                     break;
                 case "pay":
                     //[type, sender, receiver, amount]
@@ -201,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
                 default:
-                    Toast.makeText(MainActivity.this, "Unknown payload delivered", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Unknown payload delivered ", Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -216,6 +224,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onConnectionInitiated(@NonNull String s, @NonNull ConnectionInfo connectionInfo) {
             // connection was requested by discoverer, and needs to be accepted by both now
+            tempPlayerName = connectionInfo.getEndpointName();
             Nearby.getConnectionsClient(MainActivity.this)
                     .acceptConnection(s, payloadCallback);
             stopDiscovery(); //
@@ -227,10 +236,11 @@ public class MainActivity extends AppCompatActivity {
                 case ConnectionsStatusCodes.STATUS_OK:
                     // We're connected! Can now start sending and receiving data.
                     // add to players
-                    Toast.makeText(getApplicationContext(), "Connected to: " + s, Toast.LENGTH_SHORT).show();
-                    discoverStatus.setText("Connected");
+                    Toast.makeText(getApplicationContext(), "Connected to: " + tempPlayerName + ", id: " + s, Toast.LENGTH_SHORT).show();
+                    discoverStatus.setText("Connected to " + tempPlayerName);
                     if (!isHost)
                         hostId = s;
+                    playerMap.put(s, tempPlayerName);
                     updateAdvertiseTextView();
                     break;
                 case ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED:
@@ -395,9 +405,13 @@ public class MainActivity extends AppCompatActivity {
         gameMoneyTextView.setText(String.valueOf(money));
 
         updatePlayerTextView();
-
+        List<String> payPlayers = new ArrayList<>();
+        for (String player : (playerMap.values().toArray(new String[0]))) {
+            if (!player.equals(getUserNickname()))
+                payPlayers.add(player);
+        }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                MainActivity.this, android.R.layout.simple_spinner_item, playerMap.values().toArray(new String[0]));
+                MainActivity.this, android.R.layout.simple_spinner_item, payPlayers);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         paySpinner.setAdapter(adapter);
 
@@ -451,7 +465,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         final int amount = Integer.parseInt(payEditText.getText().toString());
-        if (amount < money) {
+        if (amount > money) {
             return;
         }
 
